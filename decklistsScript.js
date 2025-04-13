@@ -59,7 +59,7 @@
         button.addEventListener('click', () => {
             localStorage.setItem('allEventData', JSON.stringify([]));
             localStorage.setItem('scrapeInProgress', 'true');
-            localStorage.setItem('lastRankProcessed', '0');
+            localStorage.setItem('lastRankProcessed', '501');
             navigateToDecklistViewLink();
         });
 
@@ -149,13 +149,13 @@
         
         console.log(`Decklist ${currentRank} data has been stored successfully in localStorage.`);
         
-        console.log("Navigating back and incrementing");
+        console.log("Incrementing and navigating back");
         localStorage.setItem('lastRankProcessed', `${currentRank}`);
         setTimeout(() => history.back(), navigationDelay);
     }
 
     function navigateToDecklistViewLink() {
-        const currentRank = Number(localStorage.getItem('lastRankProcessed')) + 1
+        let currentRank = Number(localStorage.getItem('lastRankProcessed')) + 1
         console.log(`About to process rank ${currentRank} decklist...`)
         const firstRow = document.querySelector('.table-block').querySelector('tr');
         let next = firstRow;
@@ -164,15 +164,26 @@
             next = next?.nextElementSibling;
             counter++;
         }
-        const link = next?.querySelector('a');
 
-        if (link) {
+        let link = next?.querySelector('a');
+        
+        // skip missing decklists
+        while (next && !link) {
+            console.log("No decklist for this rank.")
+            localStorage.setItem('lastRankProcessed', `${currentRank}`);
+            currentRank++;
+            next = next?.nextElementSibling
+            link = next?.querySelector('a')
+        }
+
+        if (next && link) {
+            localStorage.setItem('lastRankProcessed', `${currentRank}`);
             console.log(`Navigating to rank ${currentRank} decklist...`);
             setTimeout(() => {
                 window.location.href = link.href;
             }, navigationDelay);
         } else {
-            console.log('Reached last decklist. Saving CSV...');
+            console.log('Reached last decklist. Saving JSON...');
             localStorage.setItem('scrapeInProgress', 'false');
             saveDataToJSON();
             localStorage.removeItem('allEventData');
